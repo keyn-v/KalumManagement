@@ -1,0 +1,253 @@
+create table alumno
+(
+    carne     varchar(8)   not null
+        primary key,
+    apellidos varchar(128) not null,
+    nombres   varchar(128) not null,
+    direccion varchar(128) not null,
+    telefono  varchar(64)  null,
+    email     varchar(64)  not null
+);
+
+create table cargo
+(
+    cargo_id        varchar(128)   not null
+        primary key,
+    descripcion     varchar(128)   not null,
+    prefijo         varchar(64)    not null,
+    monto           decimal(10, 2) not null,
+    genera_mora     bit            null,
+    porcentaje_mora int            null
+);
+
+create table carrera_tecnica
+(
+    carrera_id      varchar(128) not null
+        primary key,
+    carrera_tecnica varchar(128) null
+);
+
+create table cuenta_x_cobrar
+(
+    cargo        varchar(128)                not null,
+    anio         varchar(4)                  not null,
+    carne        varchar(8)                  not null,
+    cargo_id     varchar(128)                not null,
+    descripcion  varchar(128)                not null,
+    fecha_cargo  datetime                    null,
+    fecha_aplica datetime                    null,
+    monto        decimal(10, 2) default 0.00 not null,
+    mora         decimal(10, 2) default 0.00 not null,
+    descuento    decimal(10, 2) default 0.00 not null,
+    primary key (cargo, anio, carne),
+    constraint FK_CUENTA_ALUMNO
+        foreign key (carne) references alumno (carne),
+    constraint FK_CUENTA_CARGO
+        foreign key (cargo_id) references cargo (cargo_id)
+);
+
+create table examen_admision
+(
+    examen_id    varchar(128) not null
+        primary key,
+    fecha_examen datetime     null
+);
+
+create table inversion_carrera_tecnica
+(
+    inversion_id      varchar(128)   not null
+        primary key,
+    carrera_id        varchar(128)   not null,
+    monto_inscripcion decimal(10, 2) not null,
+    numero_pagos      int            not null,
+    monto_pago        decimal(10, 2) null,
+    constraint FK_INVERSION_CARRERA
+        foreign key (carrera_id) references carrera_tecnica (carrera_id)
+);
+
+create table jornada
+(
+    jornada_id  varchar(128) not null
+        primary key,
+    jornada     varchar(2)   null,
+    descripcion varchar(128) null
+);
+
+create table aspirante
+(
+    no_expediente varchar(128)                      not null
+        primary key,
+    apellidos     varchar(128)                      not null,
+    nombres       varchar(128)                      not null,
+    direccion     varchar(128)                      not null,
+    telefono      varchar(64)                       not null,
+    email         varchar(128)                      not null,
+    examen_id     varchar(128)                      null,
+    estatus       varchar(32) default 'NO ASIGNADO' null,
+    carrera_id    varchar(128)                      null,
+    jornada_id    varchar(128)                      null,
+    constraint email
+        unique (email),
+    constraint FK_ASPIRANTE_CARRERA
+        foreign key (carrera_id) references carrera_tecnica (carrera_id),
+    constraint FK_ASPIRANTE_EXAMEN
+        foreign key (examen_id) references examen_admision (examen_id),
+    constraint FK_ASPIRANTE_JORNADA
+        foreign key (jornada_id) references jornada (jornada_id)
+);
+
+create table inscripcion
+(
+    inscripcion_id    varchar(128) not null
+        primary key,
+    carne             varchar(8)   not null,
+    carrera_id        varchar(128) not null,
+    jornada_id        varchar(128) not null,
+    ciclo             varchar(4)   not null,
+    fecha_inscripcion datetime     null,
+    constraint FK_INSCRIPCION_ALUMNO
+        foreign key (carne) references alumno (carne),
+    constraint FK_INSCRIPCION_CARRERA
+        foreign key (carrera_id) references carrera_tecnica (carrera_id),
+    constraint FK_INSCRIPCION_JORNADA
+        foreign key (jornada_id) references jornada (jornada_id)
+);
+
+create table inscripcion_pago
+(
+    boleta_pago   varchar(128)   not null,
+    no_expediente varchar(12)    not null,
+    anio          varchar(4)     not null,
+    fecha_pago    datetime       null,
+    monto         decimal(10, 2) not null,
+    primary key (boleta_pago, no_expediente, anio),
+    constraint FK_INSCRIPCION_ASPIRANTE
+        foreign key (no_expediente) references aspirante (no_expediente)
+);
+
+create table resultado_examen_admision
+(
+    no_expediente varchar(128)                              not null,
+    anio          varchar(4)                                not null,
+    descripcion   varchar(128) default 'EXAMEN DE ADMISION' null,
+    nota          int          default 0                    null,
+    primary key (no_expediente, anio),
+    constraint FK_RESULTADO_EXAMEN_ASPIRANTE
+        foreign key (no_expediente) references aspirante (no_expediente)
+);
+
+create definer = `kalum-test`@`%` trigger tg_test_result_update
+    after insert
+    on resultado_examen_admision
+    for each row
+BEGIN
+          if new.nota >= 70 THEN
+              update aspirante set estatus = 'SIGUE PROCESO DE ADMISION' where no_expediente = new.no_expediente;
+          ELSE
+              update aspirante set estatus = 'NO SIGUE PROCESO DE ADMISION' where no_expediente = new.no_expediente;
+          end if;
+        END;
+
+create table role
+(
+    id     bigint auto_increment
+        primary key,
+    nombre varchar(255) not null
+);
+
+create table usuario
+(
+    id        bigint auto_increment
+        primary key,
+    apellidos varchar(255) null,
+    email     varchar(255) null,
+    enabled   bit          null,
+    nombres   varchar(255) null,
+    password  varchar(255) not null,
+    username  varchar(255) not null,
+    constraint UK_5171l57faosmj8myawaucatdw
+        unique (email)
+);
+
+create table usuarios_roles
+(
+    usuario_id bigint not null,
+    role_id    bigint not null,
+    constraint UKqjaspm7473pnu9y4jxhrds8r2
+        unique (usuario_id, role_id),
+    constraint FKebiaxjbamgu326glxo1fbysuh
+        foreign key (usuario_id) references usuario (id),
+    constraint FKefntoswg8cckktsk0ha1wpm0i
+        foreign key (role_id) references role (id)
+);
+
+create definer = `kalum-test`@`%` view vw_aspirante_resultado as
+select `a`.`apellidos`    AS `apellidos`,
+       `a`.`nombres`      AS `nombres`,
+       `e`.`fecha_examen` AS `fecha_examen`,
+       `a`.`estatus`      AS `estatus`,
+       `r`.`nota`         AS `nota`
+from ((`kalum_2022_test`.`aspirante` `a` join `kalum_2022_test`.`examen_admision` `e` on ((`a`.`examen_id` = `e`.`examen_id`)))
+         join `kalum_2022_test`.`resultado_examen_admision` `r` on ((`a`.`aspirante_id` = `r`.`aspirante_id`)));
+
+create
+    definer = `kalum-test`@`%` procedure sp_enrollment_process(IN _no_expediente varchar(12), IN _ciclo varchar(4),
+                                                               IN _mes_inicio_pago int, IN _carrera_id varchar(128))
+begin
+    declare _apellidos varchar(128);
+    declare _nombres varchar(128);
+    declare _direccion varchar(128);
+    declare _telefono varchar(64);
+    declare _email varchar(64);
+    declare _jornada varchar(128);
+    declare _exists int;
+    declare _carne varchar(8);
+    declare _monto_inscripcion numeric(10,2);
+    declare _numero_pagos int;
+    declare _monto_pago numeric(10,2);
+    declare _descripcion varchar(128);
+    declare _prefijo varchar(6);
+    declare _cargo_id varchar(128);
+    declare _monto numeric(10,2);
+    declare _pagos int default 1;
+    DECLARE msg TEXT;
+    DECLARE code CHAR(5) DEFAULT '00000';
+    declare exit handler for SQLEXCEPTION
+        begin
+            GET DIAGNOSTICS CONDITION 1
+                code = RETURNED_SQLSTATE, msg = MESSAGE_TEXT;
+            select 'TRANSACTION ERROR' as status;
+            select msg as mensaje;
+            rollback;
+        end;
+    start transaction;
+    select apellidos,nombres,direccion,telefono,email, jornada_id into _apellidos,_nombres,_direccion,_telefono,_email,_jornada from aspirante where no_expediente = _no_expediente;
+    set _exists = exists(select a.carne from alumno a where substr(a.carne,1,4) = _ciclo order by a.carne desc limit 1);
+    if _exists = 1 then
+        set _carne = (select a.carne from alumno a where substr(a.carne,1,4) = _ciclo order by a.carne desc limit 1) + 1;
+    else
+        set _carne = (_ciclo * 10000) + 1;
+    end if;
+    insert into alumno(carne, apellidos, nombres, direccion, telefono, email) VALUES (_carne,_apellidos,_nombres,_direccion,_telefono,_email);
+    update aspirante set estatus = 'INSCRITO' where no_expediente = _no_expediente;
+    insert into inscripcion(inscripcion_id, carne, carrera_id, jornada_id, ciclo, fecha_inscripcion) values (uuid(),_carne,_carrera_id,_jornada,_ciclo,now());
+    select monto_inscripcion, numero_pagos, monto_pago into _monto_inscripcion,_numero_pagos,_monto_pago from inversion_carrera_tecnica where carrera_id = _carrera_id;
+    -- Registro de cargo de inscripción
+    select cargo_id,descripcion, prefijo into _cargo_id, _descripcion, _prefijo from cargo where cargo_id = '18c547ec-ad40-11ec-91f2-0242ac110002';
+    insert cuenta_x_cobrar(cargo, anio, carne, cargo_id, descripcion, fecha_cargo, fecha_aplica, monto)
+    VALUES (concat(_prefijo,substr(_ciclo,3,2),LPAD('1',2,'0')),_ciclo,_carne,_cargo_id,_descripcion,now(),now(),_monto_inscripcion);
+    -- Registro de cargo de carné
+    select cargo_id,descripcion, prefijo, monto into _cargo_id, _descripcion, _prefijo, _monto from cargo where cargo_id = '1120a6af-ad40-11ec-91f2-0242ac110002';
+    insert cuenta_x_cobrar(cargo, anio, carne, cargo_id, descripcion, fecha_cargo, fecha_aplica, monto)
+    VALUES (concat(_prefijo,substr(_ciclo,3,2),LPAD('1',2,'0')),_ciclo,_carne,_cargo_id,_descripcion,now(),now(),_monto);
+    -- Registro de pagos mensuales
+    select cargo_id,descripcion, prefijo into _cargo_id, _descripcion, _prefijo from cargo where cargo_id = '041ae6ef-ad40-11ec-91f2-0242ac110002';
+    while _pagos <= _numero_pagos do
+            insert cuenta_x_cobrar(cargo, anio, carne, cargo_id, descripcion, fecha_cargo, fecha_aplica, monto)
+            VALUES (concat(_prefijo,substr(_ciclo,3,2),LPAD(_pagos,2,'0')),_ciclo,_carne,_cargo_id,_descripcion,now(),concat(_ciclo,'-',lpad(_mes_inicio_pago,2,'0'),'-','05'),_monto_pago);
+            set _pagos = _pagos + 1;
+            set _mes_inicio_pago = _mes_inicio_pago +1;
+        end while;
+    commit;
+    select 'TANSACTION SUCCESS' as status;
+end;

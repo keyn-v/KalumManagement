@@ -1,0 +1,55 @@
+{
+	"info": {
+		"_postman_id": "16dd72cb-0e18-4a6a-a433-f2b3e716b690",
+		"name": "Java",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Inscripcion",
+			"item": [
+				{
+					"name": "01- crear solicitud de Inscripcion",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGVsbGlkb3MiOiJEdWFydGUiLCJ1c2VyX25hbWUiOiJrZHVhcnRlIiwic2NvcGUiOlsicmVhZCIsIndyaXR0ZSJdLCJleHAiOjE2NTczODQ2OTgsIm5vbWJyZSI6IktldnluIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BRE1JTiJdLCJqdGkiOiI1MzJhNmZkZC0yNjFiLTRhNDMtODAxMy04OGI4ZTE3YWQ0MDciLCJlbWFpbCI6ImtkdWFydGVAa2FsdW0uY29tIiwiY2xpZW50X2lkIjoia2FsdW0tYXBwIn0.LRXH3tPb4ciukRqXjANiMHL4iappVEa-oAUTUA5LTkc",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"noExpediente\":\"EXP-20220003\",\r\n    \"ciclo\":\"2022\",\r\n    \"mesInicioPago\": 2,\r\n    \"carreraId\":\"22ff735d-ad3a-11ec-91f2-0242ac110002\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:9000/kalum-management/v1/inscripciones/enrollment",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "9000",
+							"path": [
+								"kalum-management",
+								"v1",
+								"inscripciones",
+								"enrollment"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
